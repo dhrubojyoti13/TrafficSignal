@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traffic Signal Post</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            signal: {
+              red: '#ff2d55',
+              yellow: '#ffcc00',
+              green: '#34c759',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Traffic Light Housing & Aesthetics */
+    .signal-box {
+      background: linear-gradient(145deg, #1f232a, #14171c);
+      box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.6),
+        inset 0 2px 3px rgba(255, 255, 255, 0.1),
+        inset 0 -2px 5px rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .light-socket {
+      background: #0d0f12;
+      box-shadow: 
+        inset 0 5px 12px rgba(0, 0, 0, 0.9),
+        0 1px 2px rgba(255, 255, 255, 0.05);
+    }
+
+    /* Off-State Bulbs with Texture */
+    .light-bulb {
+      position: relative;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 0.25;
+      filter: grayscale(40%) brightness(0.6);
+      border: 2px solid rgba(0, 0, 0, 0.5);
+    }
+
+    .light-bulb::after {
+      content: '';
+      position: absolute;
+      top: 10%;
+      left: 20%;
+      width: 35%;
+      height: 25%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.6), rgba(255,255,255,0));
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* Active Glowing Lights */
+    .light-bulb.active-red {
+      opacity: 1;
+      filter: grayscale(0%) brightness(1.2);
+      background: radial-gradient(circle at 35% 35%, #ff6b81, #ff2d55 60%, #b30021);
+      box-shadow: 
+        0 0 20px #ff2d55,
+        0 0 45px rgba(255, 45, 85, 0.7),
+        0 0 80px rgba(255, 45, 85, 0.4),
+        inset 0 -4px 8px rgba(0,0,0,0.4);
+    }
+
+    .light-bulb.active-yellow {
+      opacity: 1;
+      filter: grayscale(0%) brightness(1.2);
+      background: radial-gradient(circle at 35% 35%, #fffaad, #ffcc00 60%, #997a00);
+      box-shadow: 
+        0 0 20px #ffcc00,
+        0 0 45px rgba(255, 204, 0, 0.7),
+        0 0 80px rgba(255, 204, 0, 0.4),
+        inset 0 -4px 8px rgba(0,0,0,0.4);
+    }
+
+    .light-bulb.active-green {
+      opacity: 1;
+      filter: grayscale(0%) brightness(1.2);
+      background: radial-gradient(circle at 35% 35%, #7bf099, #34c759 60%, #137a2b);
+      box-shadow: 
+        0 0 20px #34c759,
+        0 0 45px rgba(52, 199, 89, 0.7),
+        0 0 80px rgba(52, 199, 89, 0.4),
+        inset 0 -4px 8px rgba(0,0,0,0.4);
+    }
+
+    /* Pulse animation for timer digit */
+    @keyframes pulseDigit {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    .timer-text {
+      animation: pulseDigit 1s infinite ease-in-out;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+
+    /* Hood Visors for Realism */
+    .visor {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 82%;
+      height: 18px;
+      background: #121418;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.6);
+      z-index: 10;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 min-h-screen flex flex-col justify-center items-center p-6 relative overflow-hidden">
+
+  <!-- Background Ambient Grid Pattern -->
+  <div class="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-20 pointer-events-none"></div>
+
+  <!-- Ambient Glow Behind Signal -->
+  <div id="ambient-glow" class="absolute w-96 h-96 rounded-full bg-red-600/20 blur-3xl transition-all duration-700 pointer-events-none"></div>
+
+  <!-- Signal Pole Top Structure -->
+  <div class="w-12 h-6 bg-zinc-800 rounded-t-lg border-t border-x border-zinc-600 shadow-md"></div>
+
+  <!-- Traffic Signal Main Box -->
+  <div class="signal-box w-48 sm:w-56 p-5 sm:p-6 rounded-3xl flex flex-col gap-5 sm:gap-6 items-center relative z-10">
+    <!-- RED LIGHT CONTAINER -->
+    <div class="relative w-full flex justify-center">
+      <div class="visor"></div>
+      <div class="light-socket w-28 h-28 sm:w-32 sm:h-32 rounded-full p-2 flex items-center justify-center">
+        <div id="red-light" class="light-bulb active-red w-full h-full rounded-full flex items-center justify-center cursor-pointer" onclick="manualSwitch(0)" title="Click to manually switch to Red">
+          <span id="red-timer" class="timer-text font-mono text-4xl sm:text-5xl font-extrabold text-white">1</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- YELLOW LIGHT CONTAINER -->
+    <div class="relative w-full flex justify-center">
+      <div class="visor"></div>
+      <div class="light-socket w-28 h-28 sm:w-32 sm:h-32 rounded-full p-2 flex items-center justify-center">
+        <div id="yellow-light" class="light-bulb w-full h-full rounded-full flex items-center justify-center cursor-pointer" onclick="manualSwitch(1)" title="Click to manually switch to Yellow">
+          <span id="yellow-timer" class="timer-text font-mono text-4xl sm:text-5xl font-extrabold text-slate-900 hidden">1</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- GREEN LIGHT CONTAINER -->
+    <div class="relative w-full flex justify-center">
+      <div class="visor"></div>
+      <div class="light-socket w-28 h-28 sm:w-32 sm:h-32 rounded-full p-2 flex items-center justify-center">
+        <div id="green-light" class="light-bulb w-full h-full rounded-full flex items-center justify-center cursor-pointer" onclick="manualSwitch(2)" title="Click to manually switch to Green">
+          <span id="green-timer" class="timer-text font-mono text-4xl sm:text-5xl font-extrabold text-white hidden">1</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Signal Pole Base -->
+  <div class="w-8 h-24 bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-900 border-x border-zinc-600 shadow-xl"></div>
+  <div class="w-24 h-4 bg-zinc-800 rounded-t-md border-t border-zinc-600"></div>
+
+  <!-- Live Signal Status Chip -->
+  <div class="mt-6 inline-flex items-center gap-2 bg-slate-800/80 backdrop-blur border border-slate-700 px-4 py-2 rounded-full text-xs sm:text-sm font-medium text-slate-300">
+    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+    Status: <span id="visual-status-text" class="font-bold text-red-400 uppercase tracking-wider">STOP (RED)</span>
+  </div>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    let currentLightIndex = 0; // 0 = Red, 1 = Yellow, 2 = Green
+    let maxSeconds = 3;
+    let currentSeconds = 1;
+    const colors = ["red", "yellow", "green"];
+
+    const statusMeta = [
+      { visualText: "STOP (RED)", visualColor: "text-red-400", glow: "rgba(239, 68, 68, 0.25)" },
+      { visualText: "CAUTION (YELLOW)", visualColor: "text-amber-400", glow: "rgba(245, 158, 11, 0.25)" },
+      { visualText: "GO (GREEN)", visualColor: "text-emerald-400", glow: "rgba(16, 185, 129, 0.25)" }
+    ];
+
+    const lightElements = [
+      document.getElementById('red-light'),
+      document.getElementById('yellow-light'),
+      document.getElementById('green-light')
+    ];
+
+    const timerElements = [
+      document.getElementById('red-timer'),
+      document.getElementById('yellow-timer'),
+      document.getElementById('green-timer')
+    ];
+
+    function updateTrafficLight() {
+      lightElements.forEach((light, idx) => {
+        light.className = "light-bulb w-full h-full rounded-full flex items-center justify-center cursor-pointer";
+        timerElements[idx].classList.add('hidden');
+      });
+
+      const activeColor = colors[currentLightIndex];
+      lightElements[currentLightIndex].classList.add(`active-${activeColor}`);
+
+      const activeTimer = timerElements[currentLightIndex];
+      activeTimer.classList.remove('hidden');
+      activeTimer.textContent = currentSeconds;
+
+      const meta = statusMeta[currentLightIndex];
+      const visualStatusText = document.getElementById('visual-status-text');
+      visualStatusText.className = `font-bold uppercase tracking-wider ${meta.visualColor}`;
+      visualStatusText.textContent = meta.visualText;
+
+      document.getElementById('ambient-glow').style.backgroundColor = meta.glow;
+    }
+
+    function tick() {
+      updateTrafficLight();
+      currentSeconds++;
+      if (currentSeconds > maxSeconds) {
+        currentSeconds = 1;
+        currentLightIndex = (currentLightIndex + 1) % colors.length;
+      }
+    }
+
+    function manualSwitch(index) {
+      currentLightIndex = index;
+      currentSeconds = 1;
+      updateTrafficLight();
+    }
+
+    window.onload = function() {
+      updateTrafficLight();
+      setInterval(tick, 1000);
+    };
+  </script>
+</body>
+</html>
